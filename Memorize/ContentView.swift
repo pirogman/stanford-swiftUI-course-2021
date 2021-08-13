@@ -7,17 +7,45 @@
 
 import SwiftUI
 
+struct EmojiTheme: Identifiable {
+    let id: Int
+    let name: String
+    let emojis: [String]
+    let systemImageName: String
+    
+    static var availableThemes: [EmojiTheme] {
+        return [
+            EmojiTheme(
+                id: 0,
+                name: "Vehicles",
+                emojis: ["🚗", "🚕", "🚙", "🚓", "🚑", "🚚", "🚛", "🚒", "🚌", "🚎", "🏎", "🚜", "🛺"].shuffled(),
+                systemImageName: "car"),
+            EmojiTheme(
+                id: 1,
+                name: "Weather",
+                emojis: ["🌪", "🌈", "☀️", "🌧", "⛅️", "☁️", "❄️", "💨"].shuffled(),
+                systemImageName: "tornado"),
+            EmojiTheme(
+                id: 2,
+                name: "Faces",
+                emojis: ["👶", "👧", "🧒", "👦", "👩", "🧑", "👨", "👵", "🧓", "👴"].shuffled(),
+                systemImageName: "face.smiling")
+        ]
+    }
+}
+
 struct ContentView: View {
     
-    var emojis = ["🚜", "🚂", "✈️", "🛸", "🚑", "🚓", "🏎", "🚁", "🚲", "🚒", "🛴", "🚎", "🚌"].shuffled()
-    
-    @State var emojiCount = 4
+    @State var selectedTheme = EmojiTheme.availableThemes[0]
+    @State var emojiCount = 8
     
     var body: some View {
         VStack {
+            Text("Memorize!")
+                .font(.largeTitle)
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
-                    ForEach(emojis[0..<emojiCount], id: \.self) { emoji in
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 65))]) {
+                    ForEach(selectedTheme.emojis[0..<emojiCount], id: \.self) { emoji in
                         CardView(content: emoji)
                             .aspectRatio(2/3, contentMode: .fit)
                     }
@@ -26,30 +54,26 @@ struct ContentView: View {
             }
             Spacer()
             HStack {
-                remove
                 Spacer()
-                add
+                ForEach(EmojiTheme.availableThemes) { theme in
+                    Button {
+                        selectedTheme = theme
+                    } label: {
+                        VStack {
+                            Image(systemName: theme.systemImageName)
+                                .font(.largeTitle)
+                            Spacer()
+                            Text(theme.name)
+                                .font(.body)
+                        }
+                    }
+                    .aspectRatio(3/2, contentMode: .fit)
+                    .padding(.horizontal)
+                    Spacer()
+                }
             }
-            .font(.largeTitle)
-            .padding(.horizontal)
         }
-        .padding()
-    }
-    
-    var remove: some View {
-        Button {
-            if emojiCount > 1 { emojiCount -= 1 }
-        } label: {
-            Image(systemName: "minus.circle")
-        }
-    }
-    
-    var add: some View {
-        Button {
-            if emojiCount < emojis.count { emojiCount += 1 }
-        } label: {
-            Image(systemName: "plus.circle")
-        }
+        .padding(.horizontal)
     }
 }
 
