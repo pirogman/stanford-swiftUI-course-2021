@@ -10,6 +10,7 @@ import Foundation
 struct MemoryGame<CardContent> where CardContent: Equatable {
     
     private(set) var cards: Array<Card>
+    private(set) var score: Int = 0
     
     private var onlyFaceUpCardIndex: Int?
     
@@ -22,10 +23,17 @@ struct MemoryGame<CardContent> where CardContent: Equatable {
                 if cards[potentialMatchIndex].content == cards[selectedIndex].content {
                     cards[potentialMatchIndex].isMatched = true
                     cards[selectedIndex].isMatched = true
+                    score += 2
                 }
                 onlyFaceUpCardIndex = nil
             } else {
                 for index in cards.indices {
+                    if cards[index].isFaceUp {
+                        if !cards[index].isMatched && cards[index].timesSeen > 0 {
+                            score -= 1
+                        }
+                        cards[index].timesSeen += 1
+                    }
                     cards[index].isFaceUp = false
                 }
                 onlyFaceUpCardIndex = selectedIndex
@@ -41,11 +49,13 @@ struct MemoryGame<CardContent> where CardContent: Equatable {
             cards.append(Card(content: content, id: i * 2))
             cards.append(Card(content: content, id: i * 2 + 1))
         }
+        cards.shuffle()
     }
     
     struct Card: Identifiable {
         var isFaceUp: Bool = false
         var isMatched: Bool = false
+        var timesSeen: Int = 0
         var content: CardContent
         var id: Int
     }
