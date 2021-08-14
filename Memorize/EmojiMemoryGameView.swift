@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  EmojiMemoryGameView.swift
 //  Memorize
 //
 //  Created by Oleksandr Pyroh on 13.08.2021.
@@ -7,19 +7,19 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct EmojiMemoryGameView: View {
     
-    @ObservedObject var viewModel: EmojiMemoryGame
+    @ObservedObject var game: EmojiMemoryGame
     
     var body: some View {
         VStack {
             ZStack {
-                Text(viewModel.title)
+                Text(game.title)
                     .font(.largeTitle)
-                    .foregroundColor(viewModel.color)
+                    .foregroundColor(game.color)
                 HStack {
                     Spacer()
-                    Text("\(viewModel.score)")
+                    Text("\(game.score)")
                         .font(.body)
                         .bold()
                         .padding(.horizontal)
@@ -27,22 +27,22 @@ struct ContentView: View {
             }
             GeometryReader { geometry in
                 ScrollView {
-                    let size = widthThatBestFits(cardCount: viewModel.cards.count, in: geometry.size)
+                    let size = widthThatBestFits(cardCount: game.cards.count, in: geometry.size)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: size))]) {
-                        ForEach(viewModel.cards) { card in
-                            CardView(card: card, colors: viewModel.colorSet)
+                        ForEach(game.cards) { card in
+                            CardView(card: card, colors: game.colorSet)
                                 .aspectRatio(2/3, contentMode: .fit)
                                 .onTapGesture {
-                                    viewModel.choose(card)
+                                    game.choose(card)
                                 }
                         }
                     }
-                    .foregroundColor(viewModel.color)
+                    .foregroundColor(game.color)
                 }
                 .padding(.horizontal)
             }
             Button {
-                viewModel.newGame()
+                game.newGame()
             } label: {
                 Text("New Game")
                     .font(.title)
@@ -75,27 +75,39 @@ struct ContentView: View {
 
 struct CardView: View {
     
-    let card: MemoryGame<String>.Card
+    let card: EmojiMemoryGame.Card
     let colors: [Color]?
     
     var body: some View {
-        ZStack(alignment: .center) {
-            let shape = RoundedRectangle(cornerRadius: 20)
-            if card.isFaceUp {
-                shape.fill().foregroundColor(.white)
-                shape.strokeBorder(lineWidth: 3)
-                Text(card.content).font(.largeTitle)
-            } else if card.isMatched {
-                shape.opacity(0)
-            } else {
-                if let gradientColors = colors {
-                    let gradient = LinearGradient(gradient: Gradient(colors: gradientColors), startPoint: .topLeading, endPoint: .bottomTrailing)
-                    shape.fill(gradient)
+        GeometryReader { geometry in
+            ZStack(alignment: .center) {
+                let shape = RoundedRectangle(cornerRadius: DrawingConstants.cornerRadius)
+                if card.isFaceUp {
+                    shape.fill().foregroundColor(.white)
+                    shape.strokeBorder(lineWidth: DrawingConstants.lineWidth)
+                    Text(card.content).font(font(in: geometry.size))
+                } else if card.isMatched {
+                    shape.opacity(0)
                 } else {
-                    shape.fill()
+                    if let gradientColors = colors {
+                        let gradient = LinearGradient(gradient: Gradient(colors: gradientColors), startPoint: .topLeading, endPoint: .bottomTrailing)
+                        shape.fill(gradient)
+                    } else {
+                        shape.fill()
+                    }
                 }
             }
         }
+    }
+    
+    private func font(in size: CGSize) -> Font {
+        Font.system(size: min(size.width, size.height) * DrawingConstants.fontScale)
+    }
+    
+    private struct DrawingConstants {
+        static let cornerRadius: CGFloat = 20
+        static let lineWidth: CGFloat = 3
+        static let fontScale: CGFloat = 0.8
     }
     
 }
@@ -104,9 +116,9 @@ struct ContentView_Previews: PreviewProvider {
     
     static var previews: some View {
         let game = EmojiMemoryGame()
-        ContentView(viewModel: game)
+        EmojiMemoryGameView(game: game)
             .preferredColorScheme(.light)
-        ContentView(viewModel: game)
+        EmojiMemoryGameView(game: game)
             .preferredColorScheme(.dark)
     }
     
