@@ -13,24 +13,26 @@ struct MemoryGame<CardContent> where CardContent: Equatable {
     private(set) var score: Int = 0
     
     private var onlyFaceUpCardIndex: Int?
+    private var lastPickDate: Date?
     
     mutating func choose(_ card: Card) {
         if let selectedIndex = cards.firstIndex(where: { $0.id == card.id }),
            !cards[selectedIndex].isFaceUp,
            !cards[selectedIndex].isMatched
         {
+            var scoreChange: Double = 0
             if let potentialMatchIndex = onlyFaceUpCardIndex {
                 if cards[potentialMatchIndex].content == cards[selectedIndex].content {
                     cards[potentialMatchIndex].isMatched = true
                     cards[selectedIndex].isMatched = true
-                    score += 2
+                    scoreChange += 2
                 }
                 onlyFaceUpCardIndex = nil
             } else {
                 for index in cards.indices {
                     if cards[index].isFaceUp {
                         if !cards[index].isMatched && cards[index].timesSeen > 0 {
-                            score -= 1
+                            scoreChange -= 1
                         }
                         cards[index].timesSeen += 1
                     }
@@ -39,6 +41,13 @@ struct MemoryGame<CardContent> where CardContent: Equatable {
                 onlyFaceUpCardIndex = selectedIndex
             }
             cards[selectedIndex].isFaceUp.toggle()
+            let currentDate = Date()
+            if let oldDate = lastPickDate {
+                let seconds = currentDate.timeIntervalSince1970 - oldDate.timeIntervalSince1970
+                scoreChange *= max(10 - seconds, 1)
+            }
+            lastPickDate = currentDate
+            score += Int(scoreChange.rounded())
         }
     }
     

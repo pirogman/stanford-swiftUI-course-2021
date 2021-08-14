@@ -11,7 +11,7 @@ class EmojiMemoryGame: ObservableObject {
     
     static func createMemoryGame(for theme: EmojiTheme) -> MemoryGame<String> {
         let randomEmojis = theme.emojis.sorted()
-        let safePairs = max(1, min(theme.pairsToShow, theme.emojis.count))
+        let safePairs = max(1, min(theme.pairs, theme.emojis.count))
         return MemoryGame<String>(numberOfPairsOfCards: safePairs) { index in
             randomEmojis[index]
         }
@@ -22,6 +22,7 @@ class EmojiMemoryGame: ObservableObject {
     
     private(set) var title: String
     private(set) var color: Color
+    private(set) var colorSet: [Color]?
     
     var cards: Array<MemoryGame<String>.Card> {
         return model.cards
@@ -32,19 +33,25 @@ class EmojiMemoryGame: ObservableObject {
     }
     
     init() {
-        // 16 -> 12 | 13 -> 10 | 10 -> 8 | 8 -> 6 | 6 -> 4 | 3 -> 42
         themes = [
-            EmojiTheme(name: "Cars", emojis: ["🚗", "🚕", "🚙", "🚓", "🚑", "🚚", "🚛", "🚒", "🚌", "🚎", "🏎", "🚜", "🛺"], pairsToShow: 10, color: "red"),
-            EmojiTheme(name: "Medals", emojis: ["🥇", "🥈", "🥉"], pairsToShow: 42, color: "blue"),
-            EmojiTheme(name: "Shoes", emojis: ["👟", "🥾", "👞", "👠", "👡", "👢"], pairsToShow: 4, color: "yellow"),
-            EmojiTheme(name: "Hands", emojis: ["👍", "👎", "☝️", "✌️", "🤞", "🤘", "🤟", "✋", "🤚", "🖖", "🤙", "👌", "✊", "👊", "🤛", "🤜"], pairsToShow: 12, color: "green"),
-            EmojiTheme(name: "Faces", emojis: ["👶", "👧", "🧒", "👦", "👩", "🧑", "👨", "👵", "🧓", "👴"], pairsToShow: 8, color: "grey"),
-            EmojiTheme(name: "Weather", emojis: ["🌪", "🌈", "☀️", "🌧", "⛅️", "☁️", "❄️", "💨"], pairsToShow: 6, color: "purple")
+            // specified pairs
+            EmojiTheme(name: "Shoes", emojis: ["👟", "🥾", "👞", "👠", "👡", "👢"], mainColor: "yellow", pairsToShow: 4),
+            EmojiTheme(name: "Hands", emojis: ["👍", "👎", "☝️", "✌️", "🤞", "🤘", "🤟", "✋", "🤚", "🖖", "🤙", "👌", "✊", "👊", "🤛", "🤜"], mainColor: "green", pairsToShow: 12),
+            // gradient theme
+            EmojiTheme(name: "Cars", emojis: ["🚗", "🚕", "🚙", "🚓", "🚑", "🚚", "🚛", "🚒", "🚌", "🚎", "🏎", "🚜", "🛺"], mainColor: "red", gradientColors: ["orange", "red", "orange"], pairsToShow: 10),
+            // more than possible
+            EmojiTheme(name: "Medals", emojis: ["🥇", "🥈", "🥉"], mainColor: "blue", pairsToShow: 42),
+            // random each time
+            EmojiTheme(name: "Faces", emojis: ["👶", "👧", "🧒", "👦", "👩", "🧑", "👨", "👵", "🧓", "👴"], mainColor: "grey", randomPairs: true),
+            // defaults to all
+            EmojiTheme(name: "Weather", emojis: ["🌪", "🌈", "☀️", "🌧", "⛅️", "☁️", "❄️", "💨"], mainColor: "purple")
         ]
+        
         let randomTheme = themes.randomElement()!
         model = EmojiMemoryGame.createMemoryGame(for: randomTheme)
         title = randomTheme.name
-        color = Color(randomTheme.color)
+        color = Color(randomTheme.mainColor)
+        colorSet = randomTheme.gradientColors?.map { Color($0) }
     }
     
     func choose(_ card: MemoryGame<String>.Card) {
@@ -55,7 +62,8 @@ class EmojiMemoryGame: ObservableObject {
         if let randomTheme = themes.randomElement() {
             model = EmojiMemoryGame.createMemoryGame(for: randomTheme)
             title = randomTheme.name
-            color = Color(randomTheme.color)
+            color = Color(randomTheme.mainColor)
+            colorSet = randomTheme.gradientColors?.map { Color($0) }
         }
     }
     
@@ -63,13 +71,31 @@ class EmojiMemoryGame: ObservableObject {
         themes.append(theme)
     }
     
-}
-
-struct EmojiTheme {
-    
-    let name: String
-    let emojis: [String]
-    let pairsToShow: Int
-    let color: String
+    struct EmojiTheme {
+        
+        let name: String
+        let emojis: [String]
+        let mainColor: String
+        let gradientColors: [String]?
+        
+        private let pairsToShow: Int
+        private let randomPairs: Bool
+        
+        var pairs: Int {
+            randomPairs
+                ? Int.random(in: 2...emojis.count)
+                : pairsToShow
+        }
+        
+        init(name: String, emojis: [String], mainColor: String, gradientColors: [String] = [], pairsToShow: Int? = nil, randomPairs: Bool = false) {
+            self.name = name
+            self.emojis = emojis
+            self.mainColor = mainColor
+            self.gradientColors = gradientColors.isEmpty ? nil : gradientColors
+            self.pairsToShow = pairsToShow ?? emojis.count
+            self.randomPairs = randomPairs
+        }
+        
+    }
     
 }

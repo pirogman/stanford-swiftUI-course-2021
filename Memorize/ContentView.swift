@@ -16,27 +16,31 @@ struct ContentView: View {
             ZStack {
                 Text(viewModel.title)
                     .font(.largeTitle)
-                    .bold()
+                    .foregroundColor(viewModel.color)
                 HStack {
                     Spacer()
                     Text("\(viewModel.score)")
                         .font(.body)
+                        .bold()
                         .padding(.horizontal)
                 }
             }
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 65))]) {
-                    ForEach(viewModel.cards) { card in
-                        CardView(card: card)
-                            .aspectRatio(2/3, contentMode: .fit)
-                            .onTapGesture {
-                                viewModel.choose(card)
-                            }
+            GeometryReader { geometry in
+                ScrollView {
+                    let size = widthThatBestFits(cardCount: viewModel.cards.count, in: geometry.size)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: size))]) {
+                        ForEach(viewModel.cards) { card in
+                            CardView(card: card, colors: viewModel.colorSet)
+                                .aspectRatio(2/3, contentMode: .fit)
+                                .onTapGesture {
+                                    viewModel.choose(card)
+                                }
+                        }
                     }
+                    .foregroundColor(viewModel.color)
                 }
-                .foregroundColor(viewModel.color)
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
             Button {
                 viewModel.newGame()
             } label: {
@@ -47,11 +51,32 @@ struct ContentView: View {
         }
     }
     
+    private func widthThatBestFits(cardCount: Int, in size: CGSize, inset: CGFloat = 35, spacing: CGFloat = 8) -> CGFloat {
+        print("Cards: \(cardCount) | Inset: \(inset) | spacing \(spacing)")
+        print("Passed size: \(size.width) | Screen size: \(UIScreen.main.bounds.size.width)")
+        let width = size.width
+        if width < size.height {
+            // Portrait mode
+            switch cardCount {
+            case 1: return width
+            case 2...4: return (width - spacing * 2) / 2 - spacing
+            case 5...9: return (width - spacing * 3) / 3 - spacing
+            case 10...16: return (width - spacing * 4) / 4 - spacing
+            case 17...25: return (width - spacing * 5) / 5 - spacing
+            default: return 65
+            }
+        } else {
+            // Landscape mode
+            return (width - spacing * 8) / 8 - spacing
+        }
+    }
+    
 }
 
 struct CardView: View {
     
     let card: MemoryGame<String>.Card
+    let colors: [Color]?
     
     var body: some View {
         ZStack(alignment: .center) {
@@ -63,7 +88,12 @@ struct CardView: View {
             } else if card.isMatched {
                 shape.opacity(0)
             } else {
-                shape.fill()
+                if let gradientColors = colors {
+                    let gradient = LinearGradient(gradient: Gradient(colors: gradientColors), startPoint: .topLeading, endPoint: .bottomTrailing)
+                    shape.fill(gradient)
+                } else {
+                    shape.fill()
+                }
             }
         }
     }
