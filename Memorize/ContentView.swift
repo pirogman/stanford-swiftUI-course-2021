@@ -44,7 +44,8 @@ struct ContentView: View {
             Text("Memorize!")
                 .font(.largeTitle)
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 65))]) {
+                let minSize = widthThatBestFits(cardCount: emojiCount)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: minSize))]) {
                     ForEach(selectedTheme.emojis[0..<emojiCount], id: \.self) { emoji in
                         CardView(content: emoji)
                             .aspectRatio(2/3, contentMode: .fit)
@@ -58,6 +59,7 @@ struct ContentView: View {
                 ForEach(EmojiTheme.availableThemes) { theme in
                     Button {
                         selectedTheme = theme
+                        emojiCount = Int.random(in: 4..<selectedTheme.emojis.count)
                     } label: {
                         VStack {
                             Image(systemName: theme.systemImageName)
@@ -74,6 +76,30 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal)
+    }
+    
+    func widthThatBestFits(cardCount: Int) -> CGFloat {
+        let width = UIScreen.main.bounds.width
+        let height = UIScreen.main.bounds.height
+        let spacing: CGFloat = 30
+        if width < height {
+            // Portrait mode
+            switch cardCount {
+            case 1...2: return width - spacing
+            case 3...6: return width / 2 - spacing
+            case 7...12: return width / 3 - spacing
+            case 13...24: return width / 4 - spacing
+            default: return 65
+            }
+        } else {
+            // Landscape mode
+            switch cardCount {
+            case 1...6: return width / 8 - spacing
+            case 7...12: return width / 16 - spacing
+            case 13...24: return width / 24 - spacing
+            default: return 65
+            }
+        }
     }
 }
 
